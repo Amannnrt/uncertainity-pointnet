@@ -1,0 +1,27 @@
+# Environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data
+data/
+*.h5
+*.npy
+*.npz
+
+# Checkpoints / experiment outputs
+checkpoints/
+experiments/*/logs/
+experiments/*/runs/
+*.pth
+*.pt
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Misc
+*.log
