@@ -1,0 +1,14 @@
+{
+  "results_source": "/home/amannrt/Desktop/projects/uncertainty-pointnet/src/evaluation/../../experiments/baseline_pointnet_20260830_115852/mc_dropout_results_T30.csv",
+  "ece": 0.01446291481281496,
+  "ood_auroc": {
+    "total_entropy": 0.7134056915306916,
+    "epistemic": 0.6735916860916861,
+    "aleatoric": 0.7141826923076924,
+    "confidence": 0.7288121600621601
+  },
+  "best_ood_signal": "confidence",
+  "test_accuracy": 0.8282342657342657,
+  "n_test": 2288,
+  "n_ood": 180
+}
