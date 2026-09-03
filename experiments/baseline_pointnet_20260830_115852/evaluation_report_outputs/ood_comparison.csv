@@ -1,0 +1,5 @@
+Metric,Test (in-distribution),OOD (held-out classes)
+Accuracy (mean prediction),82.82%,N/A (classes not in label space)
+Mean total entropy,0.573,0.955
+Mean epistemic uncertainty,0.048,0.087
+Mean aleatoric uncertainty,0.525,0.867

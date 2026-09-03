@@ -6,7 +6,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Data (too large for git, download via script instead)
-data/
+/data/
 *.h5
 *.npy
 *.npz
