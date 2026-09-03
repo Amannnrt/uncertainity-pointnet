@@ -1,0 +1,6 @@
+Metric,Value
+Best validation accuracy,86.08%
+Test accuracy,82.82%
+Test macro precision,0.740
+Test macro recall,0.748
+Test macro F1,0.739
