@@ -1,13 +1,15 @@
 """
-Baseline PointNet training (no MC Dropout yet — that's a separate inference-time technique
-applied to this same trained model later, not a different training procedure).
+Baseline / ablation PointNet training (MC Dropout is an inference-time technique applied to
+this same trained model later, not a different training procedure).
 
 Trains on ModelNet40 with the 5 OOD classes (bottle, bowl, cup, keyboard, laptop) excluded
 entirely, validates on the held-out val split, and reports final test accuracy + per-class
 precision/recall/F1 at the end.
 
 Usage:
-    python3 src/training/train.py
+    python3 src/training/train.py                          # default run, dropout=0.3, 100 epochs
+    python3 src/training/train.py --quick                   # fast smoke test, ignore accuracy numbers
+    python3 src/training/train.py --dropout_p 0.1 --epochs 70   # dropout-rate ablation run
 """
 
 import os
@@ -91,7 +93,20 @@ def main():
     parser.add_argument("--quick", action="store_true",
                          help="Fast smoke test: 2 epochs, tiny data subset, 0 dataloader workers. "
                               "Use this first to catch bugs before committing to a full run.")
+    parser.add_argument("--dropout_p", type=float, default=None,
+                         help="Override the dropout rate (default 0.3). Use this for the "
+                              "dropout-rate ablation, e.g. --dropout_p 0.1 / 0.5 / 0.7.")
+    parser.add_argument("--epochs", type=int, default=None,
+                         help="Override number of training epochs (default 100). The baseline "
+                              "run plateaued by ~epoch 65, so ablation runs can likely use "
+                              "--epochs 70 to save time without losing accuracy.")
     args = parser.parse_args()
+
+    if args.dropout_p is not None:
+        CONFIG["dropout_p"] = args.dropout_p
+        CONFIG["run_name"] = f"dropout_ablation_p{args.dropout_p}"
+    if args.epochs is not None:
+        CONFIG["epochs"] = args.epochs
 
     if args.quick:
         CONFIG["run_name"] = "quick_smoke_test"
@@ -179,6 +194,7 @@ def main():
         "training_time_minutes": elapsed / 60,
         "num_classes": num_classes,
         "ood_classes_excluded": CONFIG["ood_classes"],
+        "dropout_p": CONFIG["dropout_p"],
     }
     logger.save_json("final_results", results)
     print("Final test results:", results)
