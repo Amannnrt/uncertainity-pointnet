@@ -1,0 +1,14 @@
+{
+  "results_source": "experiments\\dropout_ablation_p0.1_20260903_140728\\mc_dropout_results_T30.csv",
+  "ece": 0.029912727259724724,
+  "ood_auroc": {
+    "total_entropy": 0.7392239704739705,
+    "epistemic": 0.7053151709401709,
+    "aleatoric": 0.7409746503496504,
+    "confidence": 0.7353341103341104
+  },
+  "best_ood_signal": "aleatoric",
+  "test_accuracy": 0.8439685314685315,
+  "n_test": 2288,
+  "n_ood": 180
+}

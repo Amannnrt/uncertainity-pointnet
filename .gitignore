@@ -1,0 +1,29 @@
+# Environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data (too large for git, download via script instead)
+data/
+*.h5
+*.npy
+*.npz
+
+# Checkpoints / experiment outputs (large binaries — keep out of git)
+checkpoints/
+experiments/*/checkpoints/
+experiments/*/tensorboard/
+*.pth
+*.pt
+# metrics.csv, config.yaml, *.json under experiments/ are intentionally NOT ignored —
+# small, and useful to keep versioned for the paper/reproducibility.
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Misc
+*.log

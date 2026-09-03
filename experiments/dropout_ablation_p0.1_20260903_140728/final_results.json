@@ -1,0 +1,18 @@
+{
+  "best_val_acc": 0.8696132596685083,
+  "test_loss": 0.5540534570500567,
+  "test_acc": 0.8430944055944056,
+  "test_precision_macro": 0.7713880717124597,
+  "test_recall_macro": 0.7718870431893687,
+  "test_f1_macro": 0.7681914586275358,
+  "training_time_minutes": 50.13326312700907,
+  "num_classes": 35,
+  "ood_classes_excluded": [
+    "bottle",
+    "bowl",
+    "cup",
+    "keyboard",
+    "laptop"
+  ],
+  "dropout_p": 0.1
+}
