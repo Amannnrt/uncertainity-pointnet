@@ -1,0 +1,17 @@
+{
+  "results_source": "/home/amannrt/Desktop/projects/uncertainty-pointnet/src/evaluation/../../experiments/dropout_ablation_p0.1_20260903_140728/mc_dropout_results_T30.csv",
+  "grasp_threshold": 0.8916528820991516,
+  "grasp_coverage": 0.5153970826580226,
+  "grasp_actual_risk": 0.019654088050314465,
+  "rescan_threshold": 0.5363414287567139,
+  "rescan_coverage": 0.839546191247974,
+  "rescan_actual_risk": 0.14961389961389962,
+  "action_distribution": {
+    "Grasp": 1272,
+    "Re-scan": 800,
+    "Ask for help": 396
+  },
+  "ood_grasp_percentage": 5.0,
+  "target_grasp_risk": 0.02,
+  "target_rescan_risk": 0.15
+}
