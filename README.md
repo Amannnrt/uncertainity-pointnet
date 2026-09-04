@@ -1,4 +1,4 @@
-# Uncertainty-Aware PointNet
+#Uncertainty-Aware PointNet
 
 *(work in progress)*
 
@@ -11,7 +11,6 @@ That's the actual question this project is trying to answer:
 > **Can we make PointNet tell us when its own prediction shouldn't be trusted — using Monte Carlo Dropout — so a robot can make a safe grasping decision instead of confidently acting on a wrong guess?**
 
 We're not trying to beat PointNet's accuracy. We're trying to give it a working "I don't know" button.
-
 
 ---
 
@@ -29,7 +28,6 @@ It only ships with train/test splits, so we carved 10% out of the training data 
 | OOD (held out entirely) | 180 objects |
 
 **Held-out classes:** `bottle`, `bowl`, `cup`, `keyboard`, `laptop` — chosen because they're realistic things a robot might actually try to grasp, and they cover pretty different shapes (round/hollow, flat, irregular).
-
 
 ---
 
@@ -127,7 +125,6 @@ Confidence tracked accuracy closely under mild-to-moderate noise, and only reall
 
 This one's the important finding. By 60-80% occlusion, accuracy had collapsed to near-zero, but the model's confidence stayed sitting around 55-60% the whole time. In plain terms: **when the scan is badly incomplete, the model doesn't get appropriately unsure — it just keeps guessing confidently, and it's usually wrong.** This is exactly the failure mode we set out to catch in the first place, now actually demonstrated with real numbers instead of just theorized about.
 
-
 ---
 
 ## Ablation #1 — how many MC passes do we actually need?
@@ -137,7 +134,6 @@ We'd been using T=30 passes somewhat arbitrarily. So we tested T = 5, 10, 20, 30
 ![MC passes ablation](experiments/baseline_pointnet_20260830_115852/ablation_mc_passes_plot.png)
 
 **Result: barely any difference.** Accuracy, calibration, and OOD-detection AUROC were all nearly identical whether we used 5 passes or 50 — while the compute time scaled up linearly (10x the passes = roughly 10x the time, no surprise there, but no payoff for it either). So T=5 gets you basically the same quality as T=30 for a fraction of the cost. Useful to know for anything that needs to run this repeatedly.
-
 
 ---
 
@@ -160,13 +156,34 @@ The one real trade-off: dropout=0.1 wins on accuracy and OOD-detection, but its 
 
 So — this ablation's honest conclusion is a bit of a "well, that's not what we thought would happen" result. Which is fine, that's still a real finding worth reporting: **more dropout doesn't buy you a better ignorance signal here, it just costs you accuracy.**
 
+Given dropout=0.1 wins on the two metrics that matter most for safety (accuracy and OOD detection), we're adopting it as the primary model going forward — everything below uses this checkpoint.
+
+---
+
+## The actual decision policy — Grasp / Re-scan / Ask-help
+
+This is where everything above turns into something a robot could actually act on. The original plan (way back at the start) was to just eyeball some thresholds — "if uncertainty is below X, grasp." That's guessing. Instead, we built this properly using something called a **risk-coverage curve**.
+
+Here's the idea: sort every object the model's seen — both the normal test set *and* the OOD set, mixed together, since a real robot runs into both known and unknown objects — from "most confident" to "least confident." Now ask: if the robot only acted on the top K% most confident cases, and punted on the rest, how often would it actually be wrong among the ones it acted on? Walk K from 0% to 100% and you get a curve of risk vs. coverage. One important rule we built in: **if the object is actually from one of the 5 held-out OOD classes, acting on it confidently always counts as an error** — no matter which known class the model happened to guess, since the object was never in its vocabulary to begin with.
+
+![Risk-coverage curve](experiments/dropout_ablation_p0.1_20260903_140728/risk_coverage_curve.png)
+
+From that curve we picked two thresholds — "how confident does the model need to be to keep the error rate under X%":
+
+| Tier | Confidence threshold | Covers | Actual error rate |
+|---|---|---|---|
+| **Grasp** | ≥ 0.892 | 51.5% of encounters | 1.97% (target: 2%) |
+| **Re-scan** | ≥ 0.536 | 84.0% of encounters | 14.96% (target: 15%) |
+| **Ask for help** | below 0.536 | 16.0% of encounters | — |
+
+So in practice: about half the time the robot's confident enough to just grasp. A third of the time it re-scans instead of committing. The rest gets flagged for a human.
+
+**The one number that matters most here: 5.0% of the OOD (never-seen) objects still slip through to "Grasp."** That's 9 out of 180 unfamiliar objects the robot would confidently (and wrongly) act on despite this whole safety mechanism. Not zero — no uncertainty method catches everything — but small, and worth digging into later: are those 9 leaking through because they happen to look geometrically similar to a known class (e.g. a bottle that resembles a vase)? That'd be a genuinely explainable failure mode rather than random noise, and a nice thing to show in the paper if it holds up.
 
 ---
 
 ## What's still left to do
-
-- [ ] Look into whether dropout=0.1 should become the "real" model going forward, given it wins on both accuracy and OOD detection.
-- [ ] Build the actual confidence-gated decision policy (Grasp / Re-scan / Ask-help), with thresholds picked properly from the data instead of guessed.
+- [ ] Dig into exactly which 9 OOD objects leak through the Grasp threshold, and whether there's a pattern (e.g. geometric similarity to a known class).
 - [ ] Figure out what's going on with the entropy dip at 80% occlusion (see occlusion plot above — small non-monotonic wobble, probably means something, haven't dug into it yet).
 - [ ] ROS2 + simulated grasping demo (the "make it real" application layer — planned as the last piece).
 
