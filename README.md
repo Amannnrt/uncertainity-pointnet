@@ -1,6 +1,6 @@
-# Progress Report — Uncertainty-Aware PointNet
+# Uncertainty-Aware PointNet
 
-*(work in progress, last updated after the dropout-rate ablation on Sep 3, 2026)*
+*(work in progress)*
 
 ## Objective
 
@@ -11,6 +11,7 @@ That's the actual question this project is trying to answer:
 > **Can we make PointNet tell us when its own prediction shouldn't be trusted — using Monte Carlo Dropout — so a robot can make a safe grasping decision instead of confidently acting on a wrong guess?**
 
 We're not trying to beat PointNet's accuracy. We're trying to give it a working "I don't know" button.
+
 
 ---
 
@@ -28,6 +29,7 @@ It only ships with train/test splits, so we carved 10% out of the training data 
 | OOD (held out entirely) | 180 objects |
 
 **Held-out classes:** `bottle`, `bowl`, `cup`, `keyboard`, `laptop` — chosen because they're realistic things a robot might actually try to grasp, and they cover pretty different shapes (round/hollow, flat, irregular).
+
 
 ---
 
@@ -125,6 +127,7 @@ Confidence tracked accuracy closely under mild-to-moderate noise, and only reall
 
 This one's the important finding. By 60-80% occlusion, accuracy had collapsed to near-zero, but the model's confidence stayed sitting around 55-60% the whole time. In plain terms: **when the scan is badly incomplete, the model doesn't get appropriately unsure — it just keeps guessing confidently, and it's usually wrong.** This is exactly the failure mode we set out to catch in the first place, now actually demonstrated with real numbers instead of just theorized about.
 
+
 ---
 
 ## Ablation #1 — how many MC passes do we actually need?
@@ -134,6 +137,7 @@ We'd been using T=30 passes somewhat arbitrarily. So we tested T = 5, 10, 20, 30
 ![MC passes ablation](experiments/baseline_pointnet_20260830_115852/ablation_mc_passes_plot.png)
 
 **Result: barely any difference.** Accuracy, calibration, and OOD-detection AUROC were all nearly identical whether we used 5 passes or 50 — while the compute time scaled up linearly (10x the passes = roughly 10x the time, no surprise there, but no payoff for it either). So T=5 gets you basically the same quality as T=30 for a fraction of the cost. Useful to know for anything that needs to run this repeatedly.
+
 
 ---
 
@@ -155,6 +159,7 @@ This is the big one. The original run used dropout=0.3. We retrained the exact s
 The one real trade-off: dropout=0.1 wins on accuracy and OOD-detection, but its calibration is noticeably worse (0.030 vs ~0.015 for the others) — still fine by normal standards, just not as tight.
 
 So — this ablation's honest conclusion is a bit of a "well, that's not what we thought would happen" result. Which is fine, that's still a real finding worth reporting: **more dropout doesn't buy you a better ignorance signal here, it just costs you accuracy.**
+
 
 ---
 
