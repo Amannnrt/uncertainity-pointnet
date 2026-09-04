@@ -1,4 +1,4 @@
-#Uncertainty-Aware PointNet
+# Uncertainty-Aware PointNet
 
 *(work in progress)*
 
