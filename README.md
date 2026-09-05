@@ -78,27 +78,39 @@ The original paper reports ≈89% on the full 40-class dataset; the 35-class res
 Following Gal & Ghahramani (2016), leaving dropout active at inference time and performing $T$ stochastic forward passes on the same input approximates variational inference in a Bayesian neural network, without the cost of an exact Bayesian treatment. For $T=30$ passes producing softmax outputs $p_1, \dots, p_T$:
 
 **Predictive mean:**
+
 $$
 \bar{p}(y=k \mid x) = \frac{1}{T}\sum_{t=1}^{T} p_t(y=k \mid x)
 $$
 
 **Total predictive entropy** (overall uncertainty in the averaged prediction):
+
 $$
 H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\log \bar{p}(y=k \mid x)
 $$
 
 **Aleatoric uncertainty** (average uncertainty within each individual pass — uncertainty attributable to the input itself):
+
 $$
-\mathbb{E}_t\big[H[y \mid x, W_t]\big] = \frac{1}{T}\sum_{t=1}^{T} \Big(-\sum_k p_t(y=k\mid x)\log p_t(y=k\mid x)\Big)
+\mathbb{E}_t\big[H[y \mid x, W_t]\big]
+=
+\frac{1}{T}\sum_{t=1}^{T}
+\Bigg(
+-\sum_k p_t(y=k\mid x)\log p_t(y=k \mid x)
+\Bigg)
 $$
 
 **Epistemic uncertainty** (BALD mutual information — the portion of total uncertainty attributable to disagreement between passes, i.e. model-level ignorance):
+
 $$
-I[y, W \mid x] = H[y\mid x] - \mathbb{E}_t\big[H[y\mid x, W_t]\big]
+I[y, W \mid x]
+=
+H[y\mid x]
+-
+\mathbb{E}_t\big[H[y\mid x, W_t]\big]
 $$
 
 ---
-
 ## 6. Calibration and OOD Detection
 
 **Calibration.** Expected Calibration Error (ECE) partitions predictions into confidence bins and compares mean confidence against empirical accuracy per bin:
