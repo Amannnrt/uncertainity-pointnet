@@ -1,6 +1,4 @@
-# Uncertainty-Aware PointNet for Safe Robotic Grasping — Progress Report
-
-*Status: core experimental pipeline complete through the decision-policy stage. ROS2/simulated-grasping integration and full manuscript writing remain outstanding.*
+# Uncertainty-Aware PointNet for Safe Robotic Grasping
 
 ---
 
