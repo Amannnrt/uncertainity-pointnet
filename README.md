@@ -111,6 +111,7 @@ H[y\mid x]
 $$
 
 ---
+
 ## 6. Calibration and OOD Detection
 
 **Calibration.** Expected Calibration Error (ECE) partitions predictions into confidence bins and compares mean confidence against empirical accuracy per bin:
