@@ -1,5 +1,7 @@
 # Uncertainty-Aware PointNet for Safe Robotic Grasping — Progress Report
 
+*Status: core experimental pipeline complete through the decision-policy stage. ROS2/simulated-grasping integration and full manuscript writing remain outstanding.*
+
 ---
 
 ## 1. Problem Statement and Contribution
@@ -186,6 +188,8 @@ Threshold selection targets the highest-coverage operating point subject to a ri
 
 An initial threshold-selection procedure searched over all unique confidence values ($\approx$1,234 candidates) within a single evaluation split and selected the value achieving the target in-sample risk. This produced a Grasp threshold ($\tau \ge 0.892$) with a small, stable generalization gap, but a Re-scan threshold ($\tau \ge 0.536$) with in-sample risk of 15.00% that generalized to 36.07% (mean over 20 independent random splits, std 2.14%, range 32.6–41.0%) when evaluated on data disjoint from the selection sample. This gap is retained here as a substantive finding rather than discarded, since it directly motivated the corrected procedure below and is itself informative about the risks of unconstrained threshold search on limited data (only 180 OOD samples are available in total).
 
+![Risk-coverage curve (initial, uncorrected procedure)](experiments/dropout_ablation_p0.1_20260903_140728/risk_coverage_curve.png)
+
 **Corrected procedure.** All 2,468 test+OOD samples were split once into a policy-development pool (65%, seed = 42) and a frozen held-out evaluation pool (35%), the latter untouched until threshold selection was complete. Within the development pool only, a fixed grid of 20 candidate thresholds was evaluated via repeated bootstrap resampling (25 resamples per candidate) to obtain a cross-validated risk estimate per candidate, with a minimum-coverage constraint (≥10%) imposed to prevent the selection from degenerating toward a near-empty, noise-dominated tier. The selected threshold was then applied exactly once to the frozen pool.
 
 This design distinguishes two competing explanations for the original instability: if the frozen held-out risk closely matches the development-pool cross-validated estimate, the original volatility was substantially a threshold-selection overfitting artifact; if a large gap persists even under this stricter procedure, confidence genuinely cannot reliably control risk in that region regardless of selection method.
@@ -222,7 +226,11 @@ Section 10 (Limitations, prior draft) identified that the Re-scan tier's underly
 
 **Experiment 4 — oracle diagnostic and agreement-based aggregation (full dataset, N=164 Re-scan cases).** To distinguish "the information exists but aggregation destroys it" from "the information is not present," each individual additional scan was checked independently for whether it alone reached Grasp-level confidence with a correct prediction. Only **1.3%** of in-distribution Re-scan cases (2 of 157) had any additional scan meeting this bar. An agreement-based aggregation rule (commit to a class only when a majority of scans agree; treat disagreement as maximal uncertainty rather than averaging through it) was also tested and performed comparably poorly (0.6% correct promotion rate).
 
-**Conclusion.** The oracle result is decisive: for the substantial majority of Re-scan-tier cases under this occlusion model, a second independently-occluded view does not contain the distinguishing information needed to resolve the ambiguity, regardless of how observations are combined. This is not an aggregation-algorithm failure — the same conclusion held across four different combination strategies — but a property of the occlusion model itself: when the identifying geometric features of an object are removed by occlusion, a second random partial view frequently fails to reveal them. **The Re-scan action, as currently designed, should not be assumed to reduce risk**, and would require either a smarter view-selection strategy (e.g. an active-vision approach that deliberately seeks out the specific missing information, rather than an arbitrary second random viewpoint) or an acknowledgment that, under this occlusion model, "ask for help" is the more honest fallback for these cases than "re-scan."
+**Conclusion.** The oracle result is decisive: for the substantial majority of Re-scan-tier cases under this occlusion model, a second independently-occluded view does not contain the distinguishing information needed to resolve the ambiguity, regardless of how observations are combined. This is not an aggregation-algorithm failure — the same conclusion held across four different combination strategies — but a property of the occlusion model itself: when the identifying geometric features of an object are removed by occlusion, a second random partial view frequently fails to reveal them.
+
+![Multi-view fusion experiments summary](experiments/dropout_ablation_p0.1_20260903_140728/multiview_summary_plot.png)
+
+**The Re-scan action, as currently designed, should not be assumed to reduce risk**, and would require either a smarter view-selection strategy (e.g. an active-vision approach that deliberately seeks out the specific missing information, rather than an arbitrary second random viewpoint) or an acknowledgment that, under this occlusion model, "ask for help" is the more honest fallback for these cases than "re-scan."
 
 ### 9.6 System-Level Safety Comparison
 
@@ -232,6 +240,8 @@ The central practical question — does the uncertainty-aware policy actually re
 |---|---|
 | Baseline: always grasp, ignore confidence | 21.76% |
 | Uncertainty-aware policy (Grasp/Re-scan/Ask-help) | **1.38%** |
+
+![Baseline vs policy safety comparison](experiments/dropout_ablation_p0.1_20260903_140728/baseline_vs_policy_plot.png)
 
 This is a **15.8x reduction** in unsafe autonomous grasps (20.38 percentage points, absolute), at the cost of autonomously resolving only 53.5% of encounters — the remaining 46.5% are deferred to re-scanning (10.5%) or human assistance (36.0%) rather than acted on directly. This is the central quantified result of the project: the uncertainty-aware policy provides a substantial, measured safety improvement over naive always-grasp behavior, even though (Section 9.5) the specific Re-scan mitigation does not yet demonstrably improve outcomes on its own.
 
