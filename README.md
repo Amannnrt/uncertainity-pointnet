@@ -251,14 +251,6 @@ This is a **15.8x reduction** in unsafe autonomous grasps (20.38 percentage poin
 - **Formal per-severity calibration under corruption was not computed** (Section 7 discusses confidence–accuracy tracking qualitatively; ECE at each corruption severity was not measured).
 
 ---
-
-## 11. Remaining Work
-
-- [ ] Lightweight ROS2 demo for presentation purposes (not a full grasping system — the core scientific claims are validated without it; this is a visualization/demo layer).
-- [ ] Manuscript writing.
-
----
-
 ## 12. Repository Structure
 
 ```
