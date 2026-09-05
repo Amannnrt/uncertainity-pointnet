@@ -1,0 +1,14 @@
+{
+  "note": "Original single-split search found rescan_threshold~0.522 with in-sample risk 15.00% and honest held-out risk 36.07% (n_repeats=20 mean) -- KEPT, not discarded, as the finding that motivated this redesign.",
+  "grasp_threshold": 0.8768421052631579,
+  "rescan_threshold_frozen": 0.7773407202216065,
+  "dev_pool_cv_risk": 0.3011875821125448,
+  "dev_pool_cv_risk_std": 0.012903205635326844,
+  "frozen_holdout_risk": 0.3068181818181818,
+  "frozen_holdout_coverage": 0.10185185185185185,
+  "frozen_holdout_ood_leak_pct": 12.698412698412698,
+  "gap_percentage_points": 0.5630599705637007,
+  "target_achievable_in_dev": false,
+  "n_dev": 1604,
+  "n_frozen": 864
+}

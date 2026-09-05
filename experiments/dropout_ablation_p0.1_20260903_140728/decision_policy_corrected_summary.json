@@ -1,0 +1,15 @@
+{
+  "results_source": "/home/amannrt/Desktop/projects/uncertainty-pointnet/src/evaluation/../../src/evaluation/../../experiments/dropout_ablation_p0.1_20260903_140728/mc_dropout_results_T30.csv",
+  "methodology_note": "Thresholds selected on a 50% split, reported risk computed on the disjoint held-out 50% \u2014 closes the same-data leakage issue.",
+  "grasp_threshold": 0.8788608908653259,
+  "rescan_threshold": 0.5221970677375793,
+  "optimistic_grasp_risk_same_data": 0.01951951951951952,
+  "optimistic_rescan_risk_same_data": 0.14995224450811842,
+  "honest_grasp_risk_heldout": 0.027950310559006212,
+  "honest_rescan_risk_heldout": 0.36650485436893204,
+  "honest_grasp_coverage_heldout": 0.5218800648298217,
+  "honest_rescan_coverage_heldout": 0.3338735818476499,
+  "honest_ood_grasp_percentage_heldout": 7.777777777777778,
+  "n_threshold_selection": 1234,
+  "n_held_out_eval": 1234
+}

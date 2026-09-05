@@ -1,0 +1,9 @@
+{
+  "n_repeats": 20,
+  "grasp_risk_mean": 0.023650236517276213,
+  "grasp_risk_std": 0.007555686967894934,
+  "rescan_risk_mean": 0.36066991934498516,
+  "rescan_risk_std": 0.021420483721172744,
+  "ood_leak_mean_pct": 7.0,
+  "ood_leak_std_pct": 3.9299420408505323
+}
