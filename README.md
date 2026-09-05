@@ -72,43 +72,25 @@ $$
 The original paper reports ≈89% on the full 40-class dataset; the 35-class result here (5 classes withheld for OOD evaluation, no hyperparameter search) is consistent with a correct implementation rather than a degraded one.
 
 ---
-
 ## 5. Uncertainty Estimation via MC Dropout
 
-Following Gal & Ghahramani (2016), leaving dropout active at inference time and performing $T$ stochastic forward passes on the same input approximates variational inference in a Bayesian neural network, without the cost of an exact Bayesian treatment. For $T=30$ passes producing softmax outputs $p_1, \dots, p_T$:
+Following Gal & Ghahramani (2016), leaving dropout active at inference time and performing $T$ stochastic forward passes on the same input approximates variational inference in a Bayesian neural network, without the cost of an exact Bayesian treatment. For $T = 30$ passes producing softmax outputs $p_1, \dots, p_T$:
 
 **Predictive mean:**
 
-$$
-\bar{p}(y=k \mid x) = \frac{1}{T}\sum_{t=1}^{T} p_t(y=k \mid x)
-$$
+$$\bar{p}(y=k \mid x) = \frac{1}{T}\sum_{t=1}^{T} p_t(y=k \mid x)$$
 
 **Total predictive entropy** (overall uncertainty in the averaged prediction):
 
-$$
-H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\log \bar{p}(y=k \mid x)
-$$
+$$H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\log \bar{p}(y=k \mid x)$$
 
 **Aleatoric uncertainty** (average uncertainty within each individual pass — uncertainty attributable to the input itself):
 
-$$
-\mathbb{E}_t\big[H[y \mid x, W_t]\big]
-=
-\frac{1}{T}\sum_{t=1}^{T}
-\Bigg(
--\sum_k p_t(y=k\mid x)\log p_t(y=k \mid x)
-\Bigg)
-$$
+$$\mathbb{E}_t\left[H[y \mid x, W_t]\right] = \frac{1}{T}\sum_{t=1}^{T} \left(-\sum_k p_t(y=k\mid x)\log p_t(y=k \mid x)\right)$$
 
 **Epistemic uncertainty** (BALD mutual information — the portion of total uncertainty attributable to disagreement between passes, i.e. model-level ignorance):
 
-$$
-I[y, W \mid x]
-=
-H[y\mid x]
--
-\mathbb{E}_t\big[H[y\mid x, W_t]\big]
-$$
+$$I[y, W \mid x] = H[y\mid x] - \mathbb{E}_t\left[H[y\mid x, W_t]\right]$$
 
 ---
 
