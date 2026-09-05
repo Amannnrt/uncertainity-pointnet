@@ -36,7 +36,21 @@ This project investigates whether Monte Carlo (MC) Dropout can provide useful un
 The implementation follows the original PointNet classification architecture (Qi et al., 2017), omitting the segmentation branch (not required for this task):
 
 $$
-\text{Input } (N \times 3) \;\rightarrow\; T\text{-Net}_{3\times3} \;\rightarrow\; \text{MLP}_{64} \;\rightarrow\; T\text{-Net}_{64\times64} \;\rightarrow\; \text{MLP}_{64,128,1024} \;\rightarrow\; \max\text{-pool} \;\rightarrow\; \text{FC}_{512,256} \;\rightarrow\; \text{softmax}
+\text{Input } (N \times 3)
+\;\rightarrow\;
+T\text{-Net}_{3\times3}
+\;\rightarrow\;
+\text{MLP}_{64}
+\;\rightarrow\;
+T\text{-Net}_{64\times64}
+\;\rightarrow\;
+\text{MLP}_{64,128,1024}
+\;\rightarrow\;
+\max\text{-pool}
+\;\rightarrow\;
+\text{FC}_{512,256}
+\;\rightarrow\;
+\text{softmax}
 $$
 
 **Permutation invariance.** A point cloud is an unordered set $\{p_1, \dots, p_N\}$. PointNet achieves invariance to point ordering by applying a shared function $h$ independently to every point and aggregating with a symmetric function:
@@ -50,7 +64,8 @@ Because $\max$ is symmetric, this construction is provably invariant to any perm
 **Loss function.** Standard cross-entropy plus an orthogonality regularization on the learned $64\times64$ feature-alignment matrix $A$, encouraging it to behave as a near-rotation rather than a lossy projection:
 
 $$
-\mathcal{L} = \mathcal{L}_{\text{CE}}(y, \hat{y}) + \lambda \, \lVert I - AA^\top \rVert_F^2, \qquad \lambda = 0.001
+\mathcal{L} = \mathcal{L}_{\text{CE}}(y, \hat{y}) \;+\; \lambda \, \lVert I - AA^\top \rVert_F^2,
+\qquad \lambda = 0.001
 $$
 
 **Parameter count:** 3,470,188 trainable parameters, matching the ≈3.5M reported in the original paper — used as a sanity check that the implementation is a faithful reproduction rather than a reduced variant.
@@ -78,21 +93,27 @@ The original paper reports ≈89% on the full 40-class dataset; the 35-class res
 Following Gal & Ghahramani (2016), leaving dropout active at inference time and performing $T$ stochastic forward passes on the same input approximates variational inference in a Bayesian neural network, without the cost of an exact Bayesian treatment. For $T=30$ passes producing softmax outputs $p_1, \dots, p_T$:
 
 **Predictive mean:**
+
 $$
 \bar{p}(y=k \mid x) = \frac{1}{T}\sum_{t=1}^{T} p_t(y=k \mid x)
 $$
 
 **Total predictive entropy** (overall uncertainty in the averaged prediction):
+
 $$
-H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\log \bar{p}(y=k \mid x)
+H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\,\log \bar{p}(y=k \mid x)
 $$
 
 **Aleatoric uncertainty** (average uncertainty within each individual pass — uncertainty attributable to the input itself):
+
 $$
-\mathbb{E}_t\big[H[y \mid x, W_t]\big] = \frac{1}{T}\sum_{t=1}^{T} \Big(-\sum_k p_t(y=k\mid x)\log p_t(y=k\mid x)\Big)
+\mathbb{E}_t\big[H[y \mid x, W_t]\big]
+= \frac{1}{T}\sum_{t=1}^{T}
+\left(-\sum_k p_t(y=k\mid x)\,\log p_t(y=k\mid x)\right)
 $$
 
 **Epistemic uncertainty** (BALD mutual information — the portion of total uncertainty attributable to disagreement between passes, i.e. model-level ignorance):
+
 $$
 I[y, W \mid x] = H[y\mid x] - \mathbb{E}_t\big[H[y\mid x, W_t]\big]
 $$
@@ -174,13 +195,22 @@ The ablation falsified the initial hypothesis: higher dropout increased stochast
 The policy follows a selective classification framework: rather than acting on every input, the system may abstain on low-confidence inputs. **Coverage** is the fraction of encounters on which the system is permitted to act; **risk** is the error rate among the encounters accepted at a given confidence threshold $\tau$:
 
 $$
-\text{coverage}(\tau) = \frac{|\{x : \text{conf}(x) \ge \tau\}|}{n}, \qquad
+\text{coverage}(\tau) = \frac{|\{x : \text{conf}(x) \ge \tau\}|}{n}
+$$
+
+$$
 \text{risk}(\tau) = \frac{1}{|\{x : \text{conf}(x)\ge\tau\}|}\sum_{x:\,\text{conf}(x)\ge\tau} \mathbb{1}[\text{error}(x)]
 $$
 
 Sweeping $\tau$ traces the risk–coverage curve. Evaluation combines the in-distribution test set and the OOD set, since a deployed system encounters both; for the safety policy, an OOD object reaching the grasp tier is treated as an error regardless of its predicted known class, because the classifier was never trained to recognize that OOD category and the policy is intended to reject objects outside its known vocabulary.
 
-Threshold selection targets the highest-coverage operating point subject to a risk constraint, i.e. $\max \text{coverage}(\tau)$ subject to $\text{risk}(\tau) \le \tau_{\text{target}}$, rather than the threshold whose risk is merely numerically closest to the target — these are different objectives, and only the former is appropriate for maximizing usable coverage under a safety constraint.
+Threshold selection targets the highest-coverage operating point subject to a risk constraint:
+
+$$
+\max_{\tau} \;\text{coverage}(\tau) \quad \text{subject to} \quad \text{risk}(\tau) \le \tau_{\text{target}}
+$$
+
+rather than the threshold whose risk is merely numerically closest to the target — these are different objectives, and only the former is appropriate for maximizing usable coverage under a safety constraint.
 
 ### 9.2 Methodological Issue Identified and Corrected
 
@@ -235,12 +265,12 @@ src/
 ├── data/          # dataset loading, train/val/test/OOD splitting, corruption generators
 ├── models/        # PointNet backbone, MC Dropout inference mode
 ├── training/      # training script (baseline + dropout-rate ablation via CLI flags)
-├── inference/      # MC Dropout inference (per-sample uncertainty)
-├── evaluation/      # calibration/OOD-AUROC, corruption sweeps, MC-pass and dropout-rate
-│                    # ablations, decision-policy derivation (leaky, corrected, and
-│                    # frozen-holdout versions), OOD-leak inspection
-└── utils/          # experiment logging, shared config (OOD classes, seeds, point count)
+├── inference/     # MC Dropout inference (per-sample uncertainty)
+├── evaluation/    # calibration/OOD-AUROC, corruption sweeps, MC-pass and dropout-rate
+│                  # ablations, decision-policy derivation (leaky, corrected, and
+│                  # frozen-holdout versions), OOD-leak inspection
+└── utils/         # experiment logging, shared config (OOD classes, seeds, point count)
 
-experiments/        # one folder per training run: config, checkpoints, metrics, plots, JSON summaries
+experiments/       # one folder per training run: config, checkpoints, metrics, plots, JSON summaries
 data/               # downloaded ModelNet40 (not tracked in git; re-downloadable via script)
 ```
