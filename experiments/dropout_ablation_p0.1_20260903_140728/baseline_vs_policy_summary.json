@@ -1,0 +1,11 @@
+{
+  "n_total": 2468,
+  "baseline_unsafe_rate": 0.21758508914100486,
+  "policy_unsafe_rate": 0.013776337115072935,
+  "grasp_coverage": 0.5352512155591572,
+  "grasp_risk": 0.025738077214231644,
+  "rescan_coverage": 0.10453808752025932,
+  "askhelp_coverage": 0.3602106969205835,
+  "absolute_reduction_pct_points": 20.38087520259319,
+  "relative_reduction_factor": 15.79411764705882
+}

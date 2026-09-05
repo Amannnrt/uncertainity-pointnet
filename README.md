@@ -1,4 +1,4 @@
-# Uncertainty-Aware PointNet for Safe Robotic Grasping
+# Uncertainty-Aware PointNet for Safe Robotic Grasping — Progress Report
 
 ---
 
@@ -36,21 +36,7 @@ This project investigates whether Monte Carlo (MC) Dropout can provide useful un
 The implementation follows the original PointNet classification architecture (Qi et al., 2017), omitting the segmentation branch (not required for this task):
 
 $$
-\text{Input } (N \times 3)
-\;\rightarrow\;
-T\text{-Net}_{3\times3}
-\;\rightarrow\;
-\text{MLP}_{64}
-\;\rightarrow\;
-T\text{-Net}_{64\times64}
-\;\rightarrow\;
-\text{MLP}_{64,128,1024}
-\;\rightarrow\;
-\max\text{-pool}
-\;\rightarrow\;
-\text{FC}_{512,256}
-\;\rightarrow\;
-\text{softmax}
+\text{Input } (N \times 3) \;\rightarrow\; T\text{-Net}_{3\times3} \;\rightarrow\; \text{MLP}_{64} \;\rightarrow\; T\text{-Net}_{64\times64} \;\rightarrow\; \text{MLP}_{64,128,1024} \;\rightarrow\; \max\text{-pool} \;\rightarrow\; \text{FC}_{512,256} \;\rightarrow\; \text{softmax}
 $$
 
 **Permutation invariance.** A point cloud is an unordered set $\{p_1, \dots, p_N\}$. PointNet achieves invariance to point ordering by applying a shared function $h$ independently to every point and aggregating with a symmetric function:
@@ -64,8 +50,7 @@ Because $\max$ is symmetric, this construction is provably invariant to any perm
 **Loss function.** Standard cross-entropy plus an orthogonality regularization on the learned $64\times64$ feature-alignment matrix $A$, encouraging it to behave as a near-rotation rather than a lossy projection:
 
 $$
-\mathcal{L} = \mathcal{L}_{\text{CE}}(y, \hat{y}) \;+\; \lambda \, \lVert I - AA^\top \rVert_F^2,
-\qquad \lambda = 0.001
+\mathcal{L} = \mathcal{L}_{\text{CE}}(y, \hat{y}) + \lambda \, \lVert I - AA^\top \rVert_F^2, \qquad \lambda = 0.001
 $$
 
 **Parameter count:** 3,470,188 trainable parameters, matching the ≈3.5M reported in the original paper — used as a sanity check that the implementation is a faithful reproduction rather than a reduced variant.
@@ -93,27 +78,21 @@ The original paper reports ≈89% on the full 40-class dataset; the 35-class res
 Following Gal & Ghahramani (2016), leaving dropout active at inference time and performing $T$ stochastic forward passes on the same input approximates variational inference in a Bayesian neural network, without the cost of an exact Bayesian treatment. For $T=30$ passes producing softmax outputs $p_1, \dots, p_T$:
 
 **Predictive mean:**
-
 $$
 \bar{p}(y=k \mid x) = \frac{1}{T}\sum_{t=1}^{T} p_t(y=k \mid x)
 $$
 
 **Total predictive entropy** (overall uncertainty in the averaged prediction):
-
 $$
-H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\,\log \bar{p}(y=k \mid x)
+H[y \mid x] = -\sum_k \bar{p}(y=k\mid x)\log \bar{p}(y=k \mid x)
 $$
 
 **Aleatoric uncertainty** (average uncertainty within each individual pass — uncertainty attributable to the input itself):
-
 $$
-\mathbb{E}_t\big[H[y \mid x, W_t]\big]
-= \frac{1}{T}\sum_{t=1}^{T}
-\left(-\sum_k p_t(y=k\mid x)\,\log p_t(y=k\mid x)\right)
+\mathbb{E}_t\big[H[y \mid x, W_t]\big] = \frac{1}{T}\sum_{t=1}^{T} \Big(-\sum_k p_t(y=k\mid x)\log p_t(y=k\mid x)\Big)
 $$
 
 **Epistemic uncertainty** (BALD mutual information — the portion of total uncertainty attributable to disagreement between passes, i.e. model-level ignorance):
-
 $$
 I[y, W \mid x] = H[y\mid x] - \mathbb{E}_t\big[H[y\mid x, W_t]\big]
 $$
@@ -195,22 +174,13 @@ The ablation falsified the initial hypothesis: higher dropout increased stochast
 The policy follows a selective classification framework: rather than acting on every input, the system may abstain on low-confidence inputs. **Coverage** is the fraction of encounters on which the system is permitted to act; **risk** is the error rate among the encounters accepted at a given confidence threshold $\tau$:
 
 $$
-\text{coverage}(\tau) = \frac{|\{x : \text{conf}(x) \ge \tau\}|}{n}
-$$
-
-$$
+\text{coverage}(\tau) = \frac{|\{x : \text{conf}(x) \ge \tau\}|}{n}, \qquad
 \text{risk}(\tau) = \frac{1}{|\{x : \text{conf}(x)\ge\tau\}|}\sum_{x:\,\text{conf}(x)\ge\tau} \mathbb{1}[\text{error}(x)]
 $$
 
 Sweeping $\tau$ traces the risk–coverage curve. Evaluation combines the in-distribution test set and the OOD set, since a deployed system encounters both; for the safety policy, an OOD object reaching the grasp tier is treated as an error regardless of its predicted known class, because the classifier was never trained to recognize that OOD category and the policy is intended to reject objects outside its known vocabulary.
 
-Threshold selection targets the highest-coverage operating point subject to a risk constraint:
-
-$$
-\max_{\tau} \;\text{coverage}(\tau) \quad \text{subject to} \quad \text{risk}(\tau) \le \tau_{\text{target}}
-$$
-
-rather than the threshold whose risk is merely numerically closest to the target — these are different objectives, and only the former is appropriate for maximizing usable coverage under a safety constraint.
+Threshold selection targets the highest-coverage operating point subject to a risk constraint, i.e. $\max \text{coverage}(\tau)$ subject to $\text{risk}(\tau) \le \tau_{\text{target}}$, rather than the threshold whose risk is merely numerically closest to the target — these are different objectives, and only the former is appropriate for maximizing usable coverage under a safety constraint.
 
 ### 9.2 Methodological Issue Identified and Corrected
 
@@ -240,11 +210,40 @@ Samples reaching the Grasp tier despite being OOD were inspected directly rather
 
 ---
 
+### 9.5 Validating the Re-scan Premise: Multi-View Fusion Experiments
+
+Section 10 (Limitations, prior draft) identified that the Re-scan tier's underlying premise — that an additional observation improves outcomes for medium-confidence cases — had not been experimentally validated. Four experiments were conducted to test this directly, using independently generated partial viewpoints of each object (random-direction visibility masks over the full-resolution point cloud, not merely re-sampled duplicates of a single occluded view).
+
+**Experiment 1 — naive spatial point-cloud fusion (fixed budget).** The union of two independent partial views was compressed back to 1024 points (matching the original single-view budget). Result: 20.0% of Re-scan-tier cases were correctly promoted to Grasp; 66.7% of promotions were correct.
+
+**Experiment 2 — naive spatial fusion (natural budget).** Correcting a methodological flaw in Experiment 1 — a real second scan adds points rather than compressing back to the original budget — the fused cloud was allowed to retain its natural, larger point count. Result: 26.1% correct promotion rate; 85.7% of promotions correct. This confirms the fixed-budget design in Experiment 1 was suppressing performance, but fusion still left the majority of Re-scan cases unresolved (52.2% moved to Ask-for-help rather than Grasp).
+
+**Experiment 3 — probability-distribution averaging.** To eliminate any risk of feeding the network unfamiliar point-cloud geometry, each scan was kept as an independent, normally-formatted 1024-point view, and the resulting MC Dropout mean probability distributions were averaged across scans (a standard multi-view ensembling approach). Result: 0.0% correct promotion across 24 Re-scan cases; mean confidence *decreased* monotonically with additional scans (0.821 → 0.535 → 0.434 for k=1,2,3). This is a predictable consequence of averaging distributions that disagree on the top class — when different occluded views point toward different classes, averaging necessarily flattens the resulting distribution rather than sharpening it.
+
+**Experiment 4 — oracle diagnostic and agreement-based aggregation (full dataset, N=164 Re-scan cases).** To distinguish "the information exists but aggregation destroys it" from "the information is not present," each individual additional scan was checked independently for whether it alone reached Grasp-level confidence with a correct prediction. Only **1.3%** of in-distribution Re-scan cases (2 of 157) had any additional scan meeting this bar. An agreement-based aggregation rule (commit to a class only when a majority of scans agree; treat disagreement as maximal uncertainty rather than averaging through it) was also tested and performed comparably poorly (0.6% correct promotion rate).
+
+**Conclusion.** The oracle result is decisive: for the substantial majority of Re-scan-tier cases under this occlusion model, a second independently-occluded view does not contain the distinguishing information needed to resolve the ambiguity, regardless of how observations are combined. This is not an aggregation-algorithm failure — the same conclusion held across four different combination strategies — but a property of the occlusion model itself: when the identifying geometric features of an object are removed by occlusion, a second random partial view frequently fails to reveal them. **The Re-scan action, as currently designed, should not be assumed to reduce risk**, and would require either a smarter view-selection strategy (e.g. an active-vision approach that deliberately seeks out the specific missing information, rather than an arbitrary second random viewpoint) or an acknowledgment that, under this occlusion model, "ask for help" is the more honest fallback for these cases than "re-scan."
+
+### 9.6 System-Level Safety Comparison
+
+The central practical question — does the uncertainty-aware policy actually reduce unsafe autonomous actions relative to a naive system — was evaluated directly. **Unsafe grasp rate** is defined as the fraction of *all* encounters resulting in an incorrect autonomous grasp; Re-scan and Ask-help outcomes are excluded from this count regardless of their own error rate, since neither results in an autonomous grasp attempt.
+
+| Policy | Unsafe grasp rate (of all 2,468 encounters) |
+|---|---|
+| Baseline: always grasp, ignore confidence | 21.76% |
+| Uncertainty-aware policy (Grasp/Re-scan/Ask-help) | **1.38%** |
+
+This is a **15.8x reduction** in unsafe autonomous grasps (20.38 percentage points, absolute), at the cost of autonomously resolving only 53.5% of encounters — the remaining 46.5% are deferred to re-scanning (10.5%) or human assistance (36.0%) rather than acted on directly. This is the central quantified result of the project: the uncertainty-aware policy provides a substantial, measured safety improvement over naive always-grasp behavior, even though (Section 9.5) the specific Re-scan mitigation does not yet demonstrably improve outcomes on its own.
+
+---
+
 ## 10. Limitations
+
+
 
 - **Re-scan tier risk (≈30%) exceeds the originally targeted 15%.** This was established as a genuine limitation of confidence as a selection signal for this coverage regime (Section 9.2), not an artifact of an insufficiently careful search.
 - **OOD sample size is small** (180 total, ≤117 in any single development pool). Point estimates for OOD-specific metrics (e.g. leakage percentage) carry non-trivial variance; a single repeated-split analysis found a standard deviation of 3.93 percentage points on OOD leakage across 20 resamples.
-- **The re-scan strategy's practical value is not yet demonstrated experimentally.** The policy identifies intermediate-confidence cases that should trigger additional sensing; an actual second-scan experiment would be needed to confirm that re-scanning improves classification or reduces risk, rather than assuming it based on the confidence signal alone.
+- **The Re-scan action does not currently improve outcomes.** Section 9.5 tested this directly across four independent fusion/aggregation strategies; an oracle analysis found the distinguishing information needed to resolve Re-scan-tier ambiguity is present in an additional random viewpoint in only 1.3% of cases. Re-scan, as currently implemented (an arbitrary second random partial view), is not a validated risk-reduction mechanism and should not be presented as one without either an active-vision view-selection strategy or further evidence.
 - **Robotic grasping safety has not been physically or even simulation-demonstrated.** This project investigates whether MC Dropout provides useful uncertainty information for PointNet under OOD and corruption conditions; robotic grasping is the motivating application, and the ROS2/simulated-grasping integration (planned, not yet built) would be required before any claim about actual grasping safety.
 - **Formal per-severity calibration under corruption was not computed** (Section 7 discusses confidence–accuracy tracking qualitatively; ECE at each corruption severity was not measured).
 
@@ -252,8 +251,7 @@ Samples reaching the Grasp tier despite being OOD were inspected directly rather
 
 ## 11. Remaining Work
 
-- [ ] ROS2 + simulated grasping integration.
-- [ ] Second-scan experiment to test whether the Re-scan tier's premise (additional sensing improves outcomes) actually holds.
+- [ ] Lightweight ROS2 demo for presentation purposes (not a full grasping system — the core scientific claims are validated without it; this is a visualization/demo layer).
 - [ ] Manuscript writing.
 
 ---
@@ -265,12 +263,12 @@ src/
 ├── data/          # dataset loading, train/val/test/OOD splitting, corruption generators
 ├── models/        # PointNet backbone, MC Dropout inference mode
 ├── training/      # training script (baseline + dropout-rate ablation via CLI flags)
-├── inference/     # MC Dropout inference (per-sample uncertainty)
-├── evaluation/    # calibration/OOD-AUROC, corruption sweeps, MC-pass and dropout-rate
-│                  # ablations, decision-policy derivation (leaky, corrected, and
-│                  # frozen-holdout versions), OOD-leak inspection
-└── utils/         # experiment logging, shared config (OOD classes, seeds, point count)
+├── inference/      # MC Dropout inference (per-sample uncertainty)
+├── evaluation/      # calibration/OOD-AUROC, corruption sweeps, MC-pass and dropout-rate
+│                    # ablations, decision-policy derivation (leaky, corrected, and
+│                    # frozen-holdout versions), OOD-leak inspection
+└── utils/          # experiment logging, shared config (OOD classes, seeds, point count)
 
-experiments/       # one folder per training run: config, checkpoints, metrics, plots, JSON summaries
+experiments/        # one folder per training run: config, checkpoints, metrics, plots, JSON summaries
 data/               # downloaded ModelNet40 (not tracked in git; re-downloadable via script)
 ```
