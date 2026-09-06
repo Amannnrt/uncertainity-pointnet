@@ -240,7 +240,44 @@ This is a **15.8x reduction** in unsafe autonomous grasps (20.38 percentage poin
 
 ---
 
-## 10. Limitations
+## 10.PyBullet Demonstration
+
+The project includes a PyBullet simulation that connects the PointNet perception
+pipeline to a simple robotic manipulation scenario.
+
+The trained PointNet model performs MC Dropout inference on the incoming point
+cloud and uses the resulting confidence to select one of three actions:
+
+- **Grasp** — sufficiently high-confidence prediction
+- **Re-scan** — intermediate-confidence prediction
+- **Ask for help** — low-confidence prediction
+
+The simulation uses the actual PointNet inference output to control the robot
+behavior rather than manually selecting the action.
+
+### Grasp
+
+When the predicted object has sufficiently high confidence, the robot performs
+a grasping sequence.
+
+![PyBullet Grasp](experiments/pybullet_pngs/pybullet_grasp.png)
+
+### Re-scan
+
+For intermediate-confidence predictions, the robot performs a re-scan motion
+instead of immediately attempting a grasp.
+
+![PyBullet Re-scan](experiments/pybullet_pngs/pybullet_rescan.png)
+
+### Ask for Help
+
+When confidence is too low, the robot avoids autonomous grasping and moves to
+a safe state, requesting human assistance.
+
+![PyBullet Ask for Help](experiments/pybullet_pngs/pybullet_askforhelp.png)
+
+
+## 11. Limitations
 
 
 
